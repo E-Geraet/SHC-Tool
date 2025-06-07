@@ -42,16 +42,13 @@ fn main() {
             commands::ip::handle_ip_command();
         }
         Commands::Ping { target } => {
-            println!("Ping Befehl wird aufgerufen für Ziel: {}", target);
-            // commands::ping::handle_ping_command(&target); // Später aktivieren wenn ping.rs korrigiert ist
+            commands::ping::handle_ping_command(&target);
         }
         Commands::Logs { zip } => {
-            println!("Logs Befehl wird aufgerufen. Zippen: {}", zip);
-            // commands::logs::handle_logs_command("target"); // Später aktivieren wenn logs.rs korrigiert ist
+            commands::logs::handle_logs_command(zip);
         }
         Commands::Scan { target } => {
-            println!("Scan Befehl wird aufgerufen für Ziel: {}", target);
-            // commands::scan::handle_scan_command(&target); // Später aktivieren wenn scan.rs korrigiert ist
+            commands::scan::handle_scan_command(&target);
         }
     }
 }
