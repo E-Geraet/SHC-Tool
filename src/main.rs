@@ -1,10 +1,7 @@
 // src/main.rs
 mod commands; // Damit main.rs die Module in commands/ kennt
-// ... der Rest deines Codes
 
-// src/main.rs
 use clap::Parser;
-
 
 #[derive(Parser, Debug)]
 #[clap(author, version, about, long_about = None)]
@@ -41,21 +38,20 @@ fn main() {
 
     match cli.command {
         Commands::Ip => {
-            println!("IP Befehl wird aufgerufen...");
-            // Hier rufst du deine IP-Funktion auf
-            // z.B. support_helper_cli::commands::ip::handle_ip_command();
+            // IP-Funktion aufrufen
+            commands::ip::handle_ip_command();
         }
         Commands::Ping { target } => {
             println!("Ping Befehl wird aufgerufen für Ziel: {}", target);
-            // z.B. support_helper_cli::commands::ping::handle_ping_command(&target);
+            // commands::ping::handle_ping_command(&target); // Später aktivieren wenn ping.rs korrigiert ist
         }
         Commands::Logs { zip } => {
             println!("Logs Befehl wird aufgerufen. Zippen: {}", zip);
-            // z.B. support_helper_cli::commands::logs::handle_logs_command(zip);
+            // commands::logs::handle_logs_command("target"); // Später aktivieren wenn logs.rs korrigiert ist
         }
         Commands::Scan { target } => {
             println!("Scan Befehl wird aufgerufen für Ziel: {}", target);
-            // z.B. support_helper_cli::commands::scan::handle_scan_command(&target);
+            // commands::scan::handle_scan_command(&target); // Später aktivieren wenn scan.rs korrigiert ist
         }
     }
 }
