@@ -5,7 +5,7 @@ mod ollama;
 
 #[derive(Parser)]
 #[command(name = "shc-tool")]
-#[command(about = "System Health Check Tool")]
+#[command(about = "Support Help Cli")]
 #[command(version = "0.1.1")]
 struct Cli {
     #[command(subcommand)]
