@@ -1,34 +1,37 @@
 use std::fs;
 use std::path::Path;
+use crate::ollama::OllamaClient;
 
-pub fn handle_logs_command(zip: bool) {
+pub async fn handle_logs_command(
+    zip: bool,
+    analyze: bool,
+    query: Option<String>,
+    lines: usize,
+    model: Option<String>,
+    file: Option<String>  // Neuer Parameter
+) {
     println!("📋 Sammle System-Log-Informationen...");
 
     if zip {
         println!("📦 ZIP-Funktionalität wird vorbereitet...");
     }
 
-    // Liste häufiger Log-Verzeichnisse unter Linux
-    let log_paths = vec![
-        "/var/log/syslog",
-        "/var/log/auth.log",
-        "/var/log/kern.log",
-        "/var/log/dmesg",
-        "/var/log/messages",
-        "/var/log/apache2/",
-        "/var/log/nginx/",
-        "/var/log/mysql/",
-    ];
-
-    println!("\n🔍 Überprüfe Log-Dateien und -Verzeichnisse:");
-
-    for log_path in &log_paths {
-        check_log_path(log_path);
+    if analyze {
+        if let Some(query_text) = query {
+            println!("🔍 Starte Log-Analyse mit KI...");
+            analyze_logs_with_ai(&query_text, lines, model, file).await;
+        } else {
+            println!("❌ Für die Analyse muss eine Frage mit --query angegeben werden.");
+            return;
+        }
+    } else {
+        // Normale Log-Übersicht
+        if let Some(file_path) = file {
+            show_specific_log(&file_path);
+        } else {
+            show_log_overview();
+        }
     }
-
-    // Systemd journal logs (falls verfügbar)
-    println!("\n📖 Systemd Journal Status:");
-    check_systemd_journal();
 
     if zip {
         println!("\n📦 Hinweis: ZIP-Funktionalität ist noch nicht implementiert.");
@@ -39,78 +42,172 @@ pub fn handle_logs_command(zip: bool) {
     }
 }
 
-fn check_log_path(path: &str) {
-    let path_obj = Path::new(path);
+async fn analyze_logs_with_ai(
+    query: &str,
+    lines: usize,
+    model: Option<String>,
+    file: Option<String>  // Neuer Parameter
+) {
+    let ollama = OllamaClient::new(None, model);
 
-    if path_obj.exists() {
-        if path_obj.is_file() {
-            match fs::metadata(path) {
-                Ok(metadata) => {
-                    let size = metadata.len();
-                    println!("  ✅ {} (Datei, {} Bytes)", path, size);
-                }
-                Err(_) => {
-                    println!("  ✅ {} (Datei, Größe unbekannt)", path);
-                }
-            }
-        } else if path_obj.is_dir() {
-            match fs::read_dir(path) {
-                Ok(entries) => {
-                    let count = entries.count();
-                    println!("  ✅ {} (Verzeichnis, {} Einträge)", path, count);
-                }
-                Err(_) => {
-                    println!("  ✅ {} (Verzeichnis, Anzahl unbekannt)", path);
-                }
-            }
+    // Prüfe Ollama-Verfügbarkeit
+    if !ollama.check_ollama_availability().await {
+        println!("❌ Ollama ist nicht verfügbar!");
+        println!("💡 Tipps:");
+        println!("   - Stelle sicher, dass Ollama läuft: ollama serve");
+        println!("   - Installiere ein Modell: ollama pull gemma2:2b");
+        return;
+    }
+
+    println!("✅ Ollama ist verfügbar");
+
+    // Bestimme welche Log-Dateien analysiert werden sollen
+    let log_files = if let Some(specific_file) = file {
+        // Verwende spezifische Datei
+        if Path::new(&specific_file).exists() && can_read_file(&specific_file) {
+            vec![specific_file]
+        } else {
+            println!("❌ Datei '{}' existiert nicht oder ist nicht lesbar.", specific_file);
+            return;
         }
     } else {
-        println!("  ❌ {} (nicht vorhanden)", path);
+        // Verwende automatische Suche
+        find_readable_log_files()
+    };
+
+    if log_files.is_empty() {
+        println!("❌ Keine lesbaren Log-Dateien gefunden.");
+        return;
+    }
+
+    println!("🔍 Zu analysierende Log-Dateien: {}", log_files.len());
+
+    for log_file in &log_files {
+        println!("\n📄 Analysiere: {}", log_file);
+
+        match read_last_lines(log_file, lines) {
+            Ok(content) => {
+                if content.trim().is_empty() {
+                    println!("⚠️  Datei ist leer oder enthält nur Leerzeichen");
+                    continue;
+                }
+
+                match ollama.analyze_log(&content, query, lines).await {
+                    Ok(analysis) => {
+                        println!("✅ Analyse-Ergebnis:");
+                        println!("{}", analysis);
+                        println!("{}", "=".repeat(50));
+                    }
+                    Err(e) => {
+                        println!("❌ Fehler bei der Analyse: {}", e);
+                    }
+                }
+            }
+            Err(e) => {
+                println!("❌ Konnte Datei nicht lesen: {}", e);
+            }
+        }
     }
 }
 
-fn check_systemd_journal() {
-    use std::process::Command;
+fn show_specific_log(file_path: &str) {
+    println!("📄 Informationen zu: {}", file_path);
 
-    // Versuche systemctl status zu verwenden um zu prüfen ob systemd verfügbar ist
-    let output = Command::new("systemctl")
-        .arg("--version")
-        .output();
+    let path_obj = Path::new(file_path);
 
-    match output {
-        Ok(result) => {
-            if result.status.success() {
-                println!("  ✅ Systemd ist verfügbar");
-                println!("  💡 Verwende 'journalctl' für detaillierte System-Logs");
+    if !path_obj.exists() {
+        println!("❌ Datei existiert nicht: {}", file_path);
+        return;
+    }
 
-                // Zeige die letzten paar Zeilen des Journals
-                let journal_output = Command::new("journalctl")
-                    .arg("-n")
-                    .arg("5")
-                    .arg("--no-pager")
-                    .output();
+    match fs::metadata(file_path) {
+        Ok(metadata) => {
+            let size = metadata.len();
+            let readable = if can_read_file(file_path) { "✅" } else { "🔒" };
+            println!("  Status: {} Lesbar", readable);
+            println!("  Größe: {} Bytes", size);
 
-                match journal_output {
-                    Ok(journal_result) => {
-                        if journal_result.status.success() {
-                            println!("  📋 Letzte Journal-Einträge:");
-                            if let Ok(journal_str) = String::from_utf8(journal_result.stdout) {
-                                for line in journal_str.lines().take(3) {
-                                    println!("    {}", line);
-                                }
-                            }
+            if size > 0 {
+                // Zeige die letzten paar Zeilen als Vorschau
+                match read_last_lines(file_path, 5) {
+                    Ok(content) => {
+                        println!("  📋 Letzte 5 Zeilen:");
+                        for line in content.lines() {
+                            println!("    {}", line);
                         }
                     }
-                    Err(_) => {
-                        println!("  ⚠️  Konnte Journal nicht lesen (Berechtigung erforderlich?)");
+                    Err(e) => {
+                        println!("  ⚠️  Konnte Vorschau nicht laden: {}", e);
                     }
                 }
-            } else {
-                println!("  ❌ Systemd nicht verfügbar oder nicht erreichbar");
             }
         }
-        Err(_) => {
-            println!("  ❌ Systemd nicht gefunden");
+        Err(e) => {
+            println!("❌ Fehler beim Lesen der Metadaten: {}", e);
         }
     }
+}
+
+fn show_log_overview() {
+    println!("🔍 Verfügbare Log-Dateien:");
+
+    let log_files = find_readable_log_files();
+
+    if log_files.is_empty() {
+        println!("❌ Keine lesbaren Log-Dateien gefunden.");
+        return;
+    }
+
+    for log_file in &log_files {
+        print!("  📄 {}", log_file);
+
+        match fs::metadata(log_file) {
+            Ok(metadata) => {
+                let size = metadata.len();
+                println!(" ({}KB)", size / 1024);
+            }
+            Err(_) => {
+                println!(" (Größe unbekannt)");
+            }
+        }
+    }
+
+    println!("\n💡 Tipp: Verwende --analyze --query \"deine Frage\" für KI-Analyse");
+    println!("💡 Tipp: Verwende --file /pfad/zur/datei für spezifische Dateien");
+}
+
+pub fn find_readable_log_files() -> Vec<String> {
+    let potential_paths = vec![
+        "/var/log/syslog",
+        "/var/log/auth.log",
+        "/var/log/kern.log",
+        "/var/log/messages",
+        "/var/log/dmesg",
+    ];
+
+    potential_paths
+        .into_iter()
+        .filter(|path| Path::new(path).exists() && can_read_file(path))
+        .map(|s| s.to_string())
+        .collect()
+}
+
+fn can_read_file(path: &str) -> bool {
+    match fs::File::open(path) {
+        Ok(_) => true,
+        Err(_) => false,
+    }
+}
+
+fn read_last_lines(file_path: &str, max_lines: usize) -> Result<String, Box<dyn std::error::Error>> {
+    let content = fs::read_to_string(file_path)?;
+    let lines: Vec<&str> = content.lines().collect();
+
+    let start_index = if lines.len() > max_lines {
+        lines.len() - max_lines
+    } else {
+        0
+    };
+
+    Ok(lines[start_index..].join("\n"))
 }

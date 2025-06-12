@@ -3,3 +3,4 @@ pub mod ip;
 pub mod ping;
 pub mod logs;
 pub mod scan;
+pub mod test;
