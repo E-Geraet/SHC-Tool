@@ -1,213 +1,159 @@
-use std::fs;
-use std::path::Path;
-use crate::ollama::OllamaClient;
+use netdev;
 
-pub async fn handle_logs_command(
-    zip: bool,
-    analyze: bool,
-    query: Option<String>,
-    lines: usize,
-    model: Option<String>,
-    file: Option<String>  // Neuer Parameter
-) {
-    println!("📋 Sammle System-Log-Informationen...");
+pub fn handle_ip_command() {
+    println!("=== Network Interface Information ===\n");
 
-    if zip {
-        println!("📦 ZIP-Funktionalität wird vorbereitet...");
-    }
+    // Show default interface first
+    show_default_interface();
 
-    if analyze {
-        if let Some(query_text) = query {
-            println!("🔍 Starte Log-Analyse mit KI...");
-            analyze_logs_with_ai(&query_text, lines, model, file).await;
-        } else {
-            println!("❌ Für die Analyse muss eine Frage mit --query angegeben werden.");
-            return;
-        }
-    } else {
-        // Normale Log-Übersicht
-        if let Some(file_path) = file {
-            show_specific_log(&file_path);
-        } else {
-            show_log_overview();
-        }
-    }
+    println!("\n{}\n", "=".repeat(50));
 
-    if zip {
-        println!("\n📦 Hinweis: ZIP-Funktionalität ist noch nicht implementiert.");
-        println!("   Geplante Features:");
-        println!("   - Sammlung relevanter Log-Dateien");
-        println!("   - Komprimierung zu ZIP-Archiv");
-        println!("   - Zeitstempel-basierte Dateinamen");
-    }
+    // Then show all interfaces
+    show_all_interfaces();
 }
 
-async fn analyze_logs_with_ai(
-    query: &str,
-    lines: usize,
-    model: Option<String>,
-    file: Option<String>  // Neuer Parameter
-) {
-    let ollama = OllamaClient::new(None, model);
-
-    // Prüfe Ollama-Verfügbarkeit
-    if !ollama.check_ollama_availability().await {
-        println!("❌ Ollama ist nicht verfügbar!");
-        println!("💡 Tipps:");
-        println!("   - Stelle sicher, dass Ollama läuft: ollama serve");
-        println!("   - Installiere ein Modell: ollama pull gemma2:2b");
-        return;
-    }
-
-    println!("✅ Ollama ist verfügbar");
-
-    // Bestimme welche Log-Dateien analysiert werden sollen
-    let log_files = if let Some(specific_file) = file {
-        // Verwende spezifische Datei
-        if Path::new(&specific_file).exists() && can_read_file(&specific_file) {
-            vec![specific_file]
-        } else {
-            println!("❌ Datei '{}' existiert nicht oder ist nicht lesbar.", specific_file);
-            return;
-        }
-    } else {
-        // Verwende automatische Suche
-        find_readable_log_files()
-    };
-
-    if log_files.is_empty() {
-        println!("❌ Keine lesbaren Log-Dateien gefunden.");
-        return;
-    }
-
-    println!("🔍 Zu analysierende Log-Dateien: {}", log_files.len());
-
-    for log_file in &log_files {
-        println!("\n📄 Analysiere: {}", log_file);
-
-        match read_last_lines(log_file, lines) {
-            Ok(content) => {
-                if content.trim().is_empty() {
-                    println!("⚠️  Datei ist leer oder enthält nur Leerzeichen");
-                    continue;
-                }
-
-                match ollama.analyze_log(&content, query, lines).await {
-                    Ok(analysis) => {
-                        println!("✅ Analyse-Ergebnis:");
-                        println!("{}", analysis);
-                        println!("{}", "=".repeat(50));
-                    }
-                    Err(e) => {
-                        println!("❌ Fehler bei der Analyse: {}", e);
-                    }
-                }
-            }
-            Err(e) => {
-                println!("❌ Konnte Datei nicht lesen: {}", e);
-            }
-        }
-    }
-}
-
-fn show_specific_log(file_path: &str) {
-    println!("📄 Informationen zu: {}", file_path);
-
-    let path_obj = Path::new(file_path);
-
-    if !path_obj.exists() {
-        println!("❌ Datei existiert nicht: {}", file_path);
-        return;
-    }
-
-    match fs::metadata(file_path) {
-        Ok(metadata) => {
-            let size = metadata.len();
-            let readable = if can_read_file(file_path) { "✅" } else { "🔒" };
-            println!("  Status: {} Lesbar", readable);
-            println!("  Größe: {} Bytes", size);
-
-            if size > 0 {
-                // Zeige die letzten paar Zeilen als Vorschau
-                match read_last_lines(file_path, 5) {
-                    Ok(content) => {
-                        println!("  📋 Letzte 5 Zeilen:");
-                        for line in content.lines() {
-                            println!("    {}", line);
-                        }
-                    }
-                    Err(e) => {
-                        println!("  ⚠️  Konnte Vorschau nicht laden: {}", e);
-                    }
-                }
-            }
+fn show_default_interface() {
+    println!("🔹 Default Network Interface:");
+    match netdev::get_default_interface() {
+        Ok(interface) => {
+            print_interface_details(&interface, true);
         }
         Err(e) => {
-            println!("❌ Fehler beim Lesen der Metadaten: {}", e);
+            println!("❌ Error getting default interface: {}", e);
         }
     }
 }
 
-fn show_log_overview() {
-    println!("🔍 Verfügbare Log-Dateien:");
+fn show_all_interfaces() {
+    println!("🔹 All Network Interfaces:");
+    let interfaces = netdev::get_interfaces();
 
-    let log_files = find_readable_log_files();
-
-    if log_files.is_empty() {
-        println!("❌ Keine lesbaren Log-Dateien gefunden.");
+    if interfaces.is_empty() {
+        println!("❌ No network interfaces found.");
         return;
     }
 
-    for log_file in &log_files {
-        print!("  📄 {}", log_file);
+    for (i, interface) in interfaces.iter().enumerate() {
+        println!("\n--- Interface {} ---", i + 1);
+        print_interface_details(interface, false);
+    }
+}
 
-        match fs::metadata(log_file) {
-            Ok(metadata) => {
-                let size = metadata.len();
-                println!(" ({}KB)", size / 1024);
+fn print_interface_details(interface: &netdev::Interface, show_gateway: bool) {
+    println!("  Name: {}", interface.name);
+
+    if let Some(display_name) = &interface.friendly_name {
+        println!("  Display Name: {}", display_name);
+    }
+
+    if let Some(desc) = &interface.description {
+        println!("  Description: {}", desc);
+    }
+
+    println!("  Index: {}", interface.index);
+    println!("  Type: {}", interface.if_type.name());
+
+    // Build status flags - could be more elegant but this works
+    let mut flags = Vec::new();
+    if interface.is_up() { flags.push("UP"); }
+    if interface.is_running() { flags.push("RUNNING"); }
+    if interface.is_loopback() { flags.push("LOOPBACK"); }
+    if interface.is_physical() { flags.push("PHYSICAL"); }
+    if interface.is_multicast() { flags.push("MULTICAST"); }
+    if interface.is_broadcast() { flags.push("BROADCAST"); }
+    if interface.is_point_to_point() { flags.push("P2P"); }
+    if interface.is_tun() { flags.push("TUN"); }
+
+    if !flags.is_empty() {
+        println!("  Status: {}", flags.join(", "));
+    }
+
+    // MAC address
+    match interface.mac_addr {
+        Some(mac) => println!("  MAC Address: {}", mac),
+        None => println!("  MAC Address: Not available"),
+    }
+
+    // IPv4 addresses
+    if !interface.ipv4.is_empty() {
+        println!("  IPv4 Addresses:");
+        for ipv4 in &interface.ipv4 {
+            println!("    - {} (Netmask: {})", ipv4.addr(), ipv4.netmask());
+        }
+
+        // Highlight global IPv4 addresses
+        if interface.has_global_ipv4() {
+            let global_addrs = interface.global_ipv4_addrs();
+            println!("  🌐 Global IPv4 Addresses:");
+            for ip in global_addrs {
+                println!("    - {}", ip);
             }
-            Err(_) => {
-                println!(" (Größe unbekannt)");
+        }
+    } else {
+        println!("  IPv4 Addresses: None");
+    }
+
+    // IPv6 addresses
+    if !interface.ipv6.is_empty() {
+        println!("  IPv6 Addresses:");
+        // TODO: This zip could be cleaner, but it works for now
+        for (ipv6, scope_id) in interface.ipv6.iter().zip(&interface.ipv6_scope_ids) {
+            println!("    - {} (Scope ID: {})", ipv6.addr(), scope_id);
+        }
+
+        if interface.has_global_ipv6() {
+            let global_addrs = interface.global_ipv6_addrs();
+            println!("  🌐 Global IPv6 Addresses:");
+            for ip in global_addrs {
+                println!("    - {}", ip);
             }
+        }
+    } else {
+        println!("  IPv6 Addresses: None");
+    }
+
+    // Gateway info (only for default interface)
+    if show_gateway {
+        match &interface.gateway {
+            Some(gateway) => {
+                println!("  🚪 Default Gateway:");
+                println!("    MAC Address: {}", gateway.mac_addr);
+                if !gateway.ipv4.is_empty() {
+                    println!("    IPv4: {:?}", gateway.ipv4);
+                }
+                if !gateway.ipv6.is_empty() {
+                    println!("    IPv6: {:?}", gateway.ipv6);
+                }
+            }
+            None => println!("  🚪 Default Gateway: Not found"),
+        }
+
+        // DNS servers
+        if !interface.dns_servers.is_empty() {
+            println!("  🌐 DNS Servers:");
+            for dns in &interface.dns_servers {
+                println!("    - {}", dns);
+            }
+        } else {
+            println!("  🌐 DNS Servers: None configured");
         }
     }
 
-    println!("\n💡 Tipp: Verwende --analyze --query \"deine Frage\" für KI-Analyse");
-    println!("💡 Tipp: Verwende --file /pfad/zur/datei für spezifische Dateien");
-}
-
-pub fn find_readable_log_files() -> Vec<String> {
-    let potential_paths = vec![
-        "/var/log/syslog",
-        "/var/log/auth.log",
-        "/var/log/kern.log",
-        "/var/log/messages",
-        "/var/log/dmesg",
-    ];
-
-    potential_paths
-        .into_iter()
-        .filter(|path| Path::new(path).exists() && can_read_file(path))
-        .map(|s| s.to_string())
-        .collect()
-}
-
-fn can_read_file(path: &str) -> bool {
-    match fs::File::open(path) {
-        Ok(_) => true,
-        Err(_) => false,
+    // Transmission speeds
+    if let Some(tx_speed) = interface.transmit_speed {
+        println!("  📤 Transmit Speed: {} Mbps", tx_speed / 1_000_000);
     }
-}
+    if let Some(rx_speed) = interface.receive_speed {
+        println!("  📥 Receive Speed: {} Mbps", rx_speed / 1_000_000);
+    }
 
-fn read_last_lines(file_path: &str, max_lines: usize) -> Result<String, Box<dyn std::error::Error>> {
-    let content = fs::read_to_string(file_path)?;
-    let lines: Vec<&str> = content.lines().collect();
+    // MTU
+    if let Some(mtu) = interface.mtu {
+        println!("  📏 MTU: {} bytes", mtu);
+    }
 
-    let start_index = if lines.len() > max_lines {
-        lines.len() - max_lines
-    } else {
-        0
-    };
-
-    Ok(lines[start_index..].join("\n"))
+    // Default interface marker
+    if interface.default {
+        println!("  ⭐ This is the default interface");
+    }
 }

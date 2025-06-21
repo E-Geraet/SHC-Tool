@@ -5,7 +5,7 @@ mod ollama;
 
 #[derive(Parser)]
 #[command(name = "shc-tool")]
-#[command(about = "Support Help Cli")]
+#[command(about = "Support Help CLI Tool")]
 #[command(version = "0.1.1")]
 struct Cli {
     #[command(subcommand)]
@@ -14,46 +14,46 @@ struct Cli {
 
 #[derive(Subcommand)]
 enum Commands {
-    /// Zeigt lokale IP-Adressen und Gateway Informationen an
+    /// Show local IP addresses and gateway information
     Ip,
-    /// Sendet einen Ping an ein Ziel
+    /// Send ping to a target
     Ping {
-        /// Die Ziel-IP-Adresse oder der Hostname
+        /// Target IP address or hostname
         target: String,
     },
-    /// Sammelt und analysiert System-Log-Dateien
+    /// Collect and analyze system log files
     Logs {
-        /// Erstelle ZIP-Archiv der Log-Dateien
+        /// Create ZIP archive of log files
         #[arg(long)]
         zip: bool,
-        /// Analysiere Logs mit KI (Ollama)
+        /// Analyze logs with AI (Ollama)
         #[arg(long)]
         analyze: bool,
-        /// Frage für die KI-Analyse
+        /// Question for AI analysis
         #[arg(long)]
         query: Option<String>,
-        /// Anzahl der zu analysierenden Zeilen (Standard: 200)
+        /// Number of lines to analyze (default: 200)
         #[arg(long, default_value = "200")]
         lines: usize,
-        /// Ollama-Modell (Standard: gemma2:2b)
+        /// Ollama model (default: gemma2:2b)
         #[arg(long)]
         model: Option<String>,
-        /// Spezifischer Pfad zur Log-Datei
+        /// Specific path to log file
         #[arg(long)]
         file: Option<String>,
     },
-    /// Führt einen einfachen Netzwerkscan durch
+    /// Perform simple network scan
     Scan {
-        /// Das Zielnetzwerk oder der Host
+        /// Target network or host
         target: String,
     },
+    /// Test tool functionality
     Test {
-        /// Teste alle verfügbaren Commands
+        /// Test all available commands
         #[arg(long)]
         all: bool,
     },
 }
-
 
 #[tokio::main]
 async fn main() {
