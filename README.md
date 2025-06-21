@@ -1,27 +1,27 @@
 # SHC-Tool
 
-**Support Help CLI** - Ein vielseitiges Kommandozeilen-Tool für Systemadministration und Netzwerkdiagnose.
+**Support Help CLI** - A versatile command-line tool for system administration and network diagnostics.
 
-## 📋 Übersicht
+## Overview
 
-SHC-Tool ist ein in Rust entwickeltes CLI-Tool, das Systemadministratoren bei alltäglichen Aufgaben unterstützt. Es bietet Funktionen für Netzwerkdiagnose, Log-Analyse mit KI-Unterstützung und grundlegende Sicherheitsscans.
+SHC-Tool is a CLI tool developed in Rust that helps system administrators with everyday tasks. It provides functions for network diagnostics, log analysis with AI support, and basic security scans.
 
-## ✨ Features
+## Features
 
-- **🔍 IP-Informationen**: Detaillierte Anzeige von Netzwerk-Interfaces, IP-Adressen und Gateway-Informationen
-- **🏓 Ping-Funktionalität**: Einfache Netzwerk-Konnektivitätsprüfung
-- **📋 Log-Analyse**: Sammlung und KI-gestützte Analyse von System-Logs mit Ollama
-- **🔍 Netzwerk-Scan**: Port-Scanning für Sicherheitsanalysen
-- **🧪 System-Tests**: Integrierte Selbsttests für alle Komponenten
+- **IP Information**: Detailed display of network interfaces, IP addresses and gateway information
+- **Ping Functionality**: Simple network connectivity testing
+- **Log Analysis**: Collection and AI-assisted analysis of system logs with Ollama
+- **Network Scanning**: Port scanning for security analysis
+- **System Tests**: Integrated self-tests for all components
 
-## 🚀 Installation
+## Installation
 
-### Voraussetzungen
+### Prerequisites
 
 - Rust 1.70+ (Edition 2021)
-- Optional: Ollama für KI-gestützte Log-Analyse
+- Optional: Ollama for AI-assisted log analysis
 
-### Build von Source
+### Build from Source
 
 ```bash
 git clone <repository-url>
@@ -29,143 +29,143 @@ cd SHC
 cargo build --release
 ```
 
-Die ausführbare Datei findest du dann in `target/release/SHC`.
+You'll find the executable in `target/release/SHC`.
 
-## 🛠️ Verwendung
+## Usage
 
-### Grundlegende Syntax
+### Basic Syntax
 
 ```bash
 shc-tool <COMMAND> [OPTIONS]
 ```
 
-### Verfügbare Befehle
+### Available Commands
 
-#### 1. IP-Informationen anzeigen
+#### 1. Show IP Information
 
 ```bash
 shc-tool ip
 ```
 
-Zeigt detaillierte Informationen über alle Netzwerk-Interfaces an:
-- MAC-Adressen
-- IPv4/IPv6-Adressen
-- Gateway-Informationen
-- DNS-Server
-- Interface-Status und -Eigenschaften
+Shows detailed information about all network interfaces:
+- MAC addresses
+- IPv4/IPv6 addresses
+- Gateway information
+- DNS servers
+- Interface status and properties
 
-#### 2. Ping-Test
+#### 2. Ping Test
 
 ```bash
 shc-tool ping <TARGET>
 ```
 
-**Beispiele:**
+**Examples:**
 ```bash
 shc-tool ping google.com
 shc-tool ping 8.8.8.8
 ```
 
-#### 3. Log-Analyse
+#### 3. Log Analysis
 
 ```bash
-# Einfache Log-Übersicht
+# Simple log overview
 shc-tool logs
 
-# Spezifische Log-Datei anzeigen
+# Show specific log file
 shc-tool logs --file /var/log/syslog
 
-# KI-gestützte Analyse
-shc-tool logs --analyze --query "Zeige mir alle Fehler der letzten Zeit"
+# AI-assisted analysis
+shc-tool logs --analyze --query "Show me all recent errors"
 
-# Erweiterte Optionen
-shc-tool logs --analyze --query "Was ist mit dem SSH-Service?" --lines 500 --model gemma3:4b
+# Advanced options
+shc-tool logs --analyze --query "What's wrong with the SSH service?" --lines 500 --model gemma3:4b
 ```
 
-**Log-Analyse Optionen:**
-- `--zip`: Erstellt ZIP-Archiv der Log-Dateien (geplant)
-- `--analyze`: Aktiviert KI-gestützte Analyse
-- `--query <FRAGE>`: Spezifische Frage für die KI-Analyse
-- `--lines <ANZAHL>`: Anzahl der zu analysierenden Zeilen (Standard: 200)
-- `--model <MODELL>`: Ollama-Modell (Standard: gemma3:4b)
-- `--file <PFAD>`: Spezifische Log-Datei analysieren
+**Log Analysis Options:**
+- `--zip`: Create ZIP archive of log files (planned)
+- `--analyze`: Enable AI-assisted analysis
+- `--query <QUESTION>`: Specific question for AI analysis
+- `--lines <NUMBER>`: Number of lines to analyze (default: 200)
+- `--model <MODEL>`: Ollama model (default: gemma3:4b)
+- `--file <PATH>`: Analyze specific log file
 
-#### 4. Netzwerk-Scan
+#### 4. Network Scan
 
 ```bash
 shc-tool scan <TARGET>
 ```
 
-**Beispiele:**
+**Examples:**
 ```bash
 shc-tool scan 192.168.1.1
 shc-tool scan 10.0.0.0/24
 ```
 
-Scannt häufig verwendete Ports und zeigt:
-- Offene Ports und zugehörige Services
-- Sicherheitswarnungen für kritische Services
-- Scan-Zusammenfassung
+Scans commonly used ports and shows:
+- Open ports and associated services
+- Security warnings for critical services
+- Scan summary
 
-#### 5. System-Tests
+#### 5. System Tests
 
 ```bash
-# Basis-Funktionalitätstest
+# Basic functionality test
 shc-tool test
 
-# Vollständiger Test aller Komponenten
+# Complete test of all components
 shc-tool test --all
 ```
 
-## 🤖 Ollama-Integration
+## Ollama Integration
 
-Für die KI-gestützte Log-Analyse benötigst du Ollama:
+For AI-assisted log analysis you need Ollama:
 
 ### Ollama Setup
 
-1. **Installation**: Folge der [Ollama-Dokumentation](https://ollama.ai/)
+1. **Installation**: Follow the [Ollama documentation](https://ollama.ai/)
 
-2. **Service starten**:
+2. **Start service**:
    ```bash
    ollama serve
    ```
 
-3. **Modell installieren**:
+3. **Install model**:
    ```bash
    ollama pull gemma3:4b
-   # oder ein anderes Modell deiner Wahl
+   # or another model of your choice
    ```
 
-### Unterstützte Modelle
+### Supported Models
 
-- `gemma2:2b` (Standard, schnell)
-- `gemma3:4b` (ausgewogen)
-- Alle anderen von Ollama unterstützten Modelle
+- `gemma2:2b` (default, fast)
+- `gemma3:4b` (balanced)
+- All other models supported by Ollama
 
-## 📁 Unterstützte Log-Dateien
+## Supported Log Files
 
-Das Tool sucht automatisch nach folgenden Log-Dateien (Linux):
+The tool automatically searches for the following log files (Linux):
 - `/var/log/syslog`
 - `/var/log/auth.log`
 - `/var/log/kern.log`
 - `/var/log/messages`
 - `/var/log/dmesg`
 
-Du kannst auch spezifische Log-Dateien mit `--file` angeben.
+You can also specify specific log files with `--file`.
 
-## 🔧 Konfiguration
+## Configuration
 
-### Ollama-Konfiguration
+### Ollama Configuration
 
-Standardmäßig verwendet das Tool:
+By default, the tool uses:
 - **Server**: `http://localhost:11434`
-- **Modell**: `gemma3:4b`
+- **Model**: `gemma3:4b`
 
-Diese können über Kommandozeilenparameter angepasst werden.
+These can be adjusted via command line parameters.
 
-### Scan-Konfiguration
+### Scan Configuration
 
-Der Netzwerk-Scan überprüft folgende Standard-Ports:
+The network scan checks the following default ports:
 - 21 (FTP), 22 (SSH), 23 (Telnet)
 - 25 (SMTP), 53 (DNS), 80 (HTTP), 443 (HTTPS)
 - 110 (POP3), 143 (IMAP), 993 (IMAPS), 995 (POP3S)
@@ -173,107 +173,107 @@ Der Netzwerk-Scan überprüft folgende Standard-Ports:
 - 1433 (SQL Server), 3389 (RDP), 5432 (PostgreSQL)
 - 5900 (VNC), 8080 (HTTP-Alt), 8443 (HTTPS-Alt)
 
-## 🛡️ Sicherheitshinweise
+## Security Notes
 
-- Das Tool führt nur passive Scans durch
-- Verwende es nur in Netzwerken, für die du autorisiert bist
-- Die Ollama-Integration verarbeitet Log-Daten lokal
-- Keine Daten werden an externe Services gesendet (außer an lokales Ollama)
+- The tool only performs passive scans
+- Only use it on networks you're authorized for
+- Ollama integration processes log data locally
+- No data is sent to external services (except local Ollama)
 
-## 🐛 Troubleshooting
+## Troubleshooting
 
-### Häufige Probleme
+### Common Issues
 
-**Ollama nicht verfügbar:**
+**Ollama not available:**
 ```bash
-# Prüfe ob Ollama läuft
+# Check if Ollama is running
 ollama serve
 
-# Installiere ein Modell
+# Install a model
 ollama pull gemma3:4b
 ```
 
-**Keine Berechtigung für Log-Dateien:**
+**No permission for log files:**
 ```bash
-# Führe mit sudo aus (Linux)
+# Run with sudo (Linux)
 sudo shc-tool logs
 
-# Oder spezifiziere eine lesbare Datei
+# Or specify a readable file
 shc-tool logs --file ./my-log.txt
 ```
 
-**Ping-Befehl nicht gefunden:**
-- Stelle sicher, dass `ping` installiert ist
-- Unter Windows wird automatisch der Windows-ping-Befehl verwendet
+**Ping command not found:**
+- Make sure `ping` is installed
+- On Windows, the Windows ping command is used automatically
 
-## 📊 Beispiel-Ausgaben
+## Example Outputs
 
-### IP-Kommando
+### IP Command
 ```
-=== Netzwerk Interface Informationen ===
+=== Network Interface Information ===
 
-🔹 Standard Network Interface:
+Standard Network Interface:
   Name: eth0
   Index: 2
-  Typ: Ethernet
+  Type: Ethernet
   Status: UP, RUNNING, MULTICAST
-  MAC-Adresse: 00:1b:44:11:3a:b7
-  IPv4-Adressen:
-    - 192.168.1.100 (Netzmaske: 255.255.255.0)
-  🚪 Standard-Gateway:
-    MAC-Adresse: 00:1b:44:11:3a:01
+  MAC Address: 00:1b:44:11:3a:b7
+  IPv4 Addresses:
+    - 192.168.1.100 (Netmask: 255.255.255.0)
+  Default Gateway:
+    MAC Address: 00:1b:44:11:3a:01
     IPv4: [192.168.1.1]
 ```
 
-### Log-Analyse
+### Log Analysis
 ```bash
-$ shc-tool logs --analyze --query "Gibt es SSH-Verbindungsprobleme?"
+$ shc-tool logs --analyze --query "Are there SSH connection problems?"
 
-🤖 Analysiere Log-Daten mit gemma3:4b ... bitte warten.
-✅ Analyse-Ergebnis:
-Basierend auf den Log-Daten wurden mehrere fehlgeschlagene SSH-Verbindungsversuche 
-von der IP 203.0.113.42 erkannt. Diese könnten auf einen Brute-Force-Angriff hindeuten.
-Empfehlung: Überprüfe die SSH-Konfiguration und erwäge die Implementierung von fail2ban.
+Analyzing log data with gemma3:4b ... please wait.
+Analysis Result:
+Based on the log data, multiple failed SSH connection attempts from IP 203.0.113.42 
+were detected. This could indicate a brute-force attack.
+Recommendation: Check SSH configuration and consider implementing fail2ban.
 ```
 
-## 🤝 Beitragen
+## Contributing
 
-Beiträge sind willkommen! Bitte:
+Contributions are welcome! Please:
 
-1. Fork das Repository
-2. Erstelle einen Feature-Branch
-3. Committe deine Änderungen
-4. Erstelle einen Pull Request
+1. Fork the repository
+2. Create a feature branch
+3. Commit your changes
+4. Create a pull request
 
-## 📝 Lizenz
+## License
 
-[Lizenz hier einfügen]
+[Insert license here]
 
-## 🔄 Version
+## Version
 
-**Aktuelle Version**: 0.1.1
+**Current Version**: 0.1.1
 
 ### Changelog
 
-- **0.1.1**: Erste funktionsfähige Version
-  - IP-Informationen
-  - Ping-Funktionalität
-  - Log-Analyse mit Ollama
-  - Netzwerk-Scanning
-  - System-Tests
+- **0.1.1**: First working version
+  - IP information
+  - Ping functionality
+  - Log analysis with Ollama
+  - Network scanning
+  - System tests
 
-## 🎯 Geplante Features
+## Planned Features
 
-- [ ] ZIP-Export für Log-Dateien
-- [ ] Erweiterte Scan-Optionen // Ollama live Chat für Nachfragen
-- [ ] Konfigurationsdatei-Support
-- [ ] Windows-Event-Log-Support
-- [ ] Monitoring-Dashboard
-- [ ] Plugin-System
+- [ ] ZIP export for log files
+- [ ] Extended scan options // Ollama live chat for follow-up questions
+- [ ] Configuration file support
+- [ ] Windows Event Log support
+- [ ] Monitoring dashboard
+- [ ] Plugin system
 
-## 📞 Support
+## Support
 
-Bei Problemen oder Fragen:
-1. Überprüfe die Troubleshooting-Sektion
-2. Führe `shc-tool test --all` aus
-3. Erstelle ein Issue mit der Ausgabe des Test-Befehls
+For problems or questions:
+1. Check the troubleshooting section
+2. Run `shc-tool test --all`
+3. Create an issue with the output of the test command
